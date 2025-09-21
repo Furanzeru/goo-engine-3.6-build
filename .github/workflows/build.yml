@@ -1,4 +1,4 @@
-name: Build Goo Engine (Linux)
+name: Build Goo Engine (Windows)
 
 on:
   workflow_dispatch:   # run manually
@@ -7,8 +7,8 @@ on:
       - goo-engine-v3.6-release
 
 jobs:
-  build-linux:
-    runs-on: ubuntu-22.04
+  build-windows:
+    runs-on: windows-latest
     steps:
       - name: Checkout Goo Engine
         uses: actions/checkout@v3
@@ -17,22 +17,16 @@ jobs:
 
       - name: Install dependencies
         run: |
-          sudo apt update
-          sudo apt install -y \
-            git cmake ninja-build build-essential \
-            libx11-dev libxi-dev libxxf86vm-dev \
-            libxrandr-dev libxcursor-dev libxinerama-dev \
-            libegl-dev libwayland-dev libxkbcommon-dev \
-            python3-dev
+          choco install -y cmake ninja git
 
       - name: Update libraries
         run: make update
 
-      - name: Build Goo Engine
-        run: make -j$(nproc)
+      - name: Build Goo Engine (Windows)
+        run: make -j %NUMBER_OF_PROCESSORS%
 
-      - name: Upload artifact
+      - name: Upload Windows artifact
         uses: actions/upload-artifact@v3
         with:
-          name: goo-engine-linux
-          path: build_linux/bin/blender
+          name: goo-engine-windows
+          path: build_windows/bin/Release/blender.exe
