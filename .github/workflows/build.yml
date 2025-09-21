@@ -1,56 +1,40 @@
-name: Build Goo Engine (Windows)
+- name: Setup Python
+  uses: actions/setup-python@v5
+  with:
+    python-version: "3.10"
 
-on:
-  workflow_dispatch:
-  push:
-    branches:
-      - goo-engine-v3.6-release
+- name: Install dependencies
+  shell: cmd
+  run: |
+    choco install -y cmake ninja git 7zip svn
 
-jobs:
-  build-windows:
-    runs-on: windows-latest
-    steps:
-      - name: Checkout Goo Engine
-        uses: actions/checkout@v3
-        with:
-          ref: goo-engine-v3.6-release
+- name: Verify Python & SVN
+  shell: cmd
+  run: |
+    python --version
+    svn --version
 
-      - name: Setup Python
-        uses: actions/setup-python@v5
-        with:
-          python-version: "3.10"
+- name: Cache Blender lib folder
+  uses: actions/cache@v3
+  with:
+    path: lib/win64_vc15
+    key: ${{ runner.os }}-libs-${{ hashFiles('**/GNUmakefile') }}
+    restore-keys: |
+      ${{ runner.os }}-libs-
 
-      - name: Install dependencies
-        shell: cmd
-        run: |
-          choco install -y cmake ninja git 7zip svn
+- name: Update libraries with retry
+  shell: cmd
+  run: |
+    set RETRIES=3
+    :loop
+    call make.bat update || (
+      if "%RETRIES%"=="0" exit /b 1
+      set /a RETRIES-=1
+      echo "Retrying make.bat update, remaining: %RETRIES%"
+      goto loop
+    )
 
-      - name: Verify tools
-        shell: cmd
-        run: |
-          python --version
-          svn --version
-
-      - name: Cache Blender Libraries
-        uses: actions/cache@v3
-        with:
-          path: lib/win64_vc15
-          key: ${{ runner.os }}-blender-libs-${{ hashFiles('**/GNUmakefile') }}
-          restore-keys: |
-            ${{ runner.os }}-blender-libs-
-
-      - name: Update libraries
-        shell: cmd
-        run: |
-          call make.bat update
-
-      - name: Build Goo Engine
-        shell: cmd
-        run: |
-          call make.bat -j %NUMBER_OF_PROCESSORS%
-
-      - name: Upload Windows artifact
-        uses: actions/upload-artifact@v4
-        with:
-          name: GooEngine-Windows
-          path: build_windows/bin/Release/**
+- name: Build Goo Engine
+  shell: cmd
+  run: |
+    call make.bat -j %NUMBER_OF_PROCESSORS%
