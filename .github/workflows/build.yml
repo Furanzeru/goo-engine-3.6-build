@@ -1,0 +1,38 @@
+name: Build Goo Engine (Linux)
+
+on:
+  workflow_dispatch:   # run manually
+  push:
+    branches:
+      - goo-engine-v3.6-release
+
+jobs:
+  build-linux:
+    runs-on: ubuntu-22.04
+    steps:
+      - name: Checkout Goo Engine
+        uses: actions/checkout@v3
+        with:
+          ref: goo-engine-v3.6-release   # build this branch
+
+      - name: Install dependencies
+        run: |
+          sudo apt update
+          sudo apt install -y \
+            git cmake ninja-build build-essential \
+            libx11-dev libxi-dev libxxf86vm-dev \
+            libxrandr-dev libxcursor-dev libxinerama-dev \
+            libegl-dev libwayland-dev libxkbcommon-dev \
+            python3-dev
+
+      - name: Update libraries
+        run: make update
+
+      - name: Build Goo Engine
+        run: make -j$(nproc)
+
+      - name: Upload artifact
+        uses: actions/upload-artifact@v3
+        with:
+          name: goo-engine-linux
+          path: build_linux/bin/blender
