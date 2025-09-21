@@ -15,10 +15,21 @@ jobs:
         with:
           ref: goo-engine-v3.6-release
 
+      - name: Setup Python
+        uses: actions/setup-python@v5
+        with:
+          python-version: "3.10"
+
       - name: Install dependencies
         shell: cmd
         run: |
-          choco install -y cmake ninja git python 7zip svn
+          choco install -y cmake ninja git 7zip svn subversion
+
+      - name: Verify tools
+        shell: cmd
+        run: |
+          python --version
+          svn --version
 
       - name: Update libraries
         shell: cmd
