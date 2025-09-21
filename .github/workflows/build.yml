@@ -1,40 +1,46 @@
-- name: Setup Python
-  uses: actions/setup-python@v5
-  with:
-    python-version: "3.10"
+jobs:
+  build-windows:
+    runs-on: windows-latest
+    steps:
+      - name: Checkout Goo Engine
+        uses: actions/checkout@v4
+        with:
+          ref: goo-engine-v3.6-release
 
-- name: Install dependencies
-  shell: cmd
-  run: |
-    choco install -y cmake ninja git 7zip svn
+      - name: Setup Python
+        uses: actions/setup-python@v5
+        with:
+          python-version: "3.10"
 
-- name: Verify Python & SVN
-  shell: cmd
-  run: |
-    python --version
-    svn --version
+      - name: Install Subversion
+        uses: jurplel/install-svn-action@v1
 
-- name: Cache Blender lib folder
-  uses: actions/cache@v3
-  with:
-    path: lib/win64_vc15
-    key: ${{ runner.os }}-libs-${{ hashFiles('**/GNUmakefile') }}
-    restore-keys: |
-      ${{ runner.os }}-libs-
+      - name: Install other dependencies
+        run: choco install -y cmake ninja git 7zip
 
-- name: Update libraries with retry
-  shell: cmd
-  run: |
-    set RETRIES=3
-    :loop
-    call make.bat update || (
-      if "%RETRIES%"=="0" exit /b 1
-      set /a RETRIES-=1
-      echo "Retrying make.bat update, remaining: %RETRIES%"
-      goto loop
-    )
+      - name: Verify tools
+        run: |
+          python --version
+          svn --version
 
-- name: Build Goo Engine
-  shell: cmd
-  run: |
-    call make.bat -j %NUMBER_OF_PROCESSORS%
+      - name: Cache Blender lib folder
+        uses: actions/cache@v3
+        with:
+          path: lib/win64_vc15
+          key: ${{ runner.os }}-libs-${{ hashFiles('**/GNUmakefile') }}
+          restore-keys: |
+            ${{ runner.os }}-libs-
+
+      - name: Update libraries
+        shell: cmd
+        run: call make.bat update
+
+      - name: Build Goo Engine
+        shell: cmd
+        run: call make.bat -j %NUMBER_OF_PROCESSORS%
+
+      - name: Upload artifact
+        uses: actions/upload-artifact@v4
+        with:
+          name: goo-engine-windows
+          path: build_windows/bin/Release/blender.exe
