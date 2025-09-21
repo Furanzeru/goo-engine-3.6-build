@@ -15,32 +15,22 @@ jobs:
         with:
           ref: goo-engine-v3.6-release
 
-      - name: Install required packages (choco)
-        # run in cmd so choco works as expected
+      - name: Install dependencies
         shell: cmd
         run: |
-          choco install -y cmake ninja git python make 7zip
+          choco install -y cmake ninja git python 7zip svn
 
-      - name: Verify tools
-        shell: cmd
-        run: |
-          cmake --version
-          ninja --version
-          git --version
-          python --version
-
-      - name: Update libraries (Windows)
-        # run the repo's Windows helper
+      - name: Update libraries
         shell: cmd
         run: |
           call make.bat update
 
-      - name: Build Goo Engine (Windows)
+      - name: Build Goo Engine
         shell: cmd
         run: |
           call make.bat -j %NUMBER_OF_PROCESSORS%
 
-      - name: Upload Windows artifact (full Release folder)
+      - name: Upload Windows artifact
         uses: actions/upload-artifact@v4
         with:
           name: GooEngine-Windows
