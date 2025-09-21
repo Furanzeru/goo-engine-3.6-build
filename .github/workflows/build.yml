@@ -23,13 +23,21 @@ jobs:
       - name: Install dependencies
         shell: cmd
         run: |
-          choco install -y cmake ninja git 7zip svn subversion
+          choco install -y cmake ninja git 7zip svn
 
       - name: Verify tools
         shell: cmd
         run: |
           python --version
           svn --version
+
+      - name: Cache Blender Libraries
+        uses: actions/cache@v3
+        with:
+          path: lib/win64_vc15
+          key: ${{ runner.os }}-blender-libs-${{ hashFiles('**/GNUmakefile') }}
+          restore-keys: |
+            ${{ runner.os }}-blender-libs-
 
       - name: Update libraries
         shell: cmd
